@@ -1,24 +1,25 @@
 <?php
-  // エラーレポートを有効にする（開発環境のみ、本番環境では無効にする）
-  ini_set('display_errors', 1);
-  ini_set('display_startup_errors', 1);
-  error_reporting(E_ALL);
-
   // セッションの開始
   session_start();
 
   // Composerのオートローダーを読み込む（絶対パスを使用）
   require __DIR__ . '/vendor/autoload.php';
+  use Dotenv\Dotenv;
+
+  // .env ファイルをロード
+  $dotenv = Dotenv::createImmutable(__DIR__);
+  $dotenv->load();
+
+  // 環境変数を取得
+  $smtpHost = $_ENV['SMTP_HOST']; // SMTPホスト
+  $smtpPort = $_ENV['SMTP_PORT']; // SMTPポート 
+  $smtpMail = $_ENV['SMTP_MAIL']; // SMTPメール
+  $smtpPass = $_ENV['SMTP_PASSWORD']; // SMTPパス
 
   use PHPMailer\PHPMailer\PHPMailer;
   use PHPMailer\PHPMailer\SMTP;
   use PHPMailer\PHPMailer\Exception;
 
-  // // セッションからフォームデータを取得
-  // if (!isset($_SESSION['form_data'])) {
-  //   header('Location: index.html');
-  //   exit;
-  // }
   // フォームデータのサニタイズとバリデーション
   $formData = [
     'Name' => $_POST['Name'] ?? '',
@@ -39,6 +40,7 @@
   $formData = $_SESSION['form_data'];
 
   // フォームデータの取得とサニタイズ
+  $LpContents = '再建築不可物件';
   $Name = htmlspecialchars(trim($formData['Name']), ENT_QUOTES, 'UTF-8');
   $NameKana = htmlspecialchars(trim($formData['NameKana']), ENT_QUOTES, 'UTF-8');
   $MailAddress = htmlspecialchars(trim($formData['MailAddress']), ENT_QUOTES, 'UTF-8');
@@ -64,17 +66,20 @@
   $IPAddress = $_SERVER["HTTP_X_FORWARDED_FOR"] ?? $_SERVER["REMOTE_ADDR"];
 
   // 管理者メール設定
-  $AdminMailAddress = "hiroki19910602@gmail.com";
+  $AdminMailAddress = [
+    "hiroki19910602+minato@gmail.com", 
+    "a_numaguchi@minato-kaihatsu.com"
+  ];
   $FromName = "株式会社港開発お問い合わせ窓口";
-  $FromMail = "noreply@baybund.com"; // 実際に存在するメールアドレスを使用
-  $AdminMailSubject = "【お問い合わせ】再建築不可物件LP";
+  $FromMail = $smtpMail;
+  $AdminMailSubject = "【お問い合わせ】{$LpContents}LP";
 
   // ユーザーメール設定
-  $UserMailSubject = "再建築不可物件ご売却のお問い合わせありがとうございます。";
+  $UserMailSubject = "{$LpContents} ご売却のお問い合わせありがとうございます。";
 
   // メール本文の作成
   $AdminMailBody = <<<EOT
-    再建築不可物件LPに
+    {$LpContents}LPに
     お客様からお問い合わせがありました。
     ※本メールは、プログラムから自動で送信しています。
 
@@ -123,7 +128,7 @@
     お客様への折り返しのご連絡をよろしくお願いいたします。
     EOT;
 
-    // ユーザーメール本文の作成
+  // ユーザーメール本文の作成
   $UserMailBody = <<<EOT
     {$Name}様
 
@@ -196,16 +201,36 @@
   // PHPMailerのインスタンスを作成
   $mail = new PHPMailer(true);
 
+  function sendToGoogleSheets($data) {
+     // ここにGASのURLを貼り付ける
+    $url = "https://script.google.com/macros/s/AKfycbxsM-7w4KZHH0NESmMQ1s_3IgbbE5lkENx_w6_Ml6yOu3nrcl8ixivCwxsApZSXAbhY/exec";
+    $options = [
+        'http' => [
+            'header'  => "Content-Type: application/json",
+            'method'  => 'POST',
+            'content' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK), // 数値の型を維持
+        ]
+    ];
+    $context  = stream_context_create($options);
+    return file_get_contents($url, false, $context);
+  }
+
+
   try {
     // SMTP設定
     $mail->isSMTP();
-    // $phpmailer->SMTPDebug = SMTP::DEBUG_LOWLEVEL;   // SMTPのデバッグ情報を出力するための設定。デバッグレベルは低いものに設定。
-    $mail->Host       = getenv('SMTP_HOST'); // 使用するSMTPサーバー（例: Gmail）
+
+    // // デバッグ情報を有効化
+    // $mail->SMTPDebug = SMTP::DEBUG_SERVER; // 詳細なデバッグ情報を出力
+    // $mail->Debugoutput = 'html'; // HTML形式で出力
+
+    $mail->Host       = $smtpHost;
     $mail->SMTPAuth   = true;
     $mail->Username   = $FromMail; // SMTPユーザー名（メールアドレス）
-    $mail->Password   = getenv('SMTP_PASSWORD'); // SMTPパスワード（Gmailの場合はアプリパスワード）
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // 暗号化方式
-    $mail->Port       = getenv('SMTP_PORT'); // SMTPポート（Gmailの場合は587）
+    $mail->Password   = $smtpPass; // SMTPパスワード
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // 暗号化方式
+    $mail->Port       = $smtpPort; // SMTPポート
+    
     
     // 文字エンコーディングの設定
     $mail->CharSet = 'UTF-8';
@@ -213,17 +238,40 @@
 
     // 管理者へのメール送信
     $mail->setFrom($FromMail, $FromName);
-    $mail->addAddress($AdminMailAddress);
+
+    // 宛先を追加
+    foreach ($AdminMailAddress as $address) {
+      $mail->addAddress(trim($address)); // trim() で余計なスペースを削除
+    }
+    
     $mail->Subject = $AdminMailSubject;
     $mail->Body    = $AdminMailBody;
     $mail->send();
   } catch (Exception $e) {
     error_log("管理者へのメール送信に失敗しました。Mailer Error: {$mail->ErrorInfo}");
   }
+  // フォームデータを送信
+  $spreadsheetResponse = sendToGoogleSheets([
+    "Name" => (string) $Name,
+    "NameKana" => (string) $NameKana,
+    "MailAddress" => (string) $MailAddress,
+    "TelNo" => (strpos($TelNo, "0") === 0) ? (string) $TelNo : "0" . (string) $TelNo, // 0を付ける
+    "Address01" => (string) $Address01,
+    "Address02" => (string) $Address02,
+    "Address03" => (string) $Address03,
+    "Check01" => (string) $Check01,
+    "Tsubo" => (string) $Tsubo,
+    "Comment" => (string) $Comment
+  ]);
+
+  if ($spreadsheetResponse !== "Success") {
+      error_log("Google Sheetsへの送信に失敗しました");
+  }
 
   try {
     // ユーザーへのメール送信
-    $mail->clearAddresses();
+    $mail->clearAllRecipients(); // すべての宛先をクリア
+
     $mail->addAddress($MailAddress);
     $mail->Subject = $UserMailSubject;
     $mail->Body    = $UserMailBody;
@@ -237,5 +285,5 @@
 
   // リダイレクト
   header('Location: ./thanks/');
-  exit;
+  exit;  
 ?>
