@@ -259,7 +259,7 @@ body a:hover {
 .header__button {
     width: calc((16.28em * 3) + 1em);
     display: grid;
-    grid-gap: 0.5rem;
+    grid-gap: 1rem;
     grid-template-columns: repeat(2, 1fr);
 }
 .header__button-item a {
@@ -292,6 +292,9 @@ body a:hover {
     font-family: "Outfit", sans-serif;
     font-weight: 400;
     font-style: normal;
+}
+.header__button-item01 a {
+    animation: pulse 2s infinite;
 }
 .header__button-item01 a,
 .header__button-item02 a {
@@ -438,7 +441,7 @@ body a:hover {
 }
 .visual__heading .emphasis {
     font-feature-settings: "palt";
-    color: #003888;
+    color: #ff5247;
 }
 .visual__heading .large {
     font-size: 1.61em;
@@ -500,6 +503,7 @@ body a:hover {
 .visual__button-item01 a {
     background-color: #ff5245;
     color: white;
+    animation: pulse 2s infinite;
 }
 .visual__button-item01 a .text {
     font-size: 0.6em;
@@ -574,6 +578,9 @@ body a:hover {
     .visual__button-item a .icon img {
         width: 1.67em;
         height: 1.67em;
+    }
+    .visual__button-item01 a {
+        animation: pulse 2s infinite;
     }
     .visual__button-item01 a .text {
         font-feature-settings: "palt";
@@ -714,6 +721,7 @@ body a:hover {
     background-color: #ff5245;
     color: white;
     height: 4.61em;
+    animation: pulse 2s infinite;
 }
 .cv__button-item01 a .text {
     font-size: 0.6em;
@@ -770,6 +778,7 @@ body a:hover {
     }
     .cv__button-item01 a {
         height: 5em;
+        animation: pulse 2s infinite;
     }
     .cv__button-item01 a .text {
         font-feature-settings: "palt";
@@ -1889,4 +1898,10 @@ body a:hover {
 }
 .floating .pagetop a:hover {
     opacity: 1;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
