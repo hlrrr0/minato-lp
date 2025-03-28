@@ -40,7 +40,7 @@
   $formData = $_SESSION['form_data'];
 
   // フォームデータの取得とサニタイズ
-  $LpContents = '共有名義不動産';
+  $LpContents = '再建築不可物件';
   $Name = htmlspecialchars(trim($formData['Name']), ENT_QUOTES, 'UTF-8');
   $NameKana = htmlspecialchars(trim($formData['NameKana']), ENT_QUOTES, 'UTF-8');
   $MailAddress = htmlspecialchars(trim($formData['MailAddress']), ENT_QUOTES, 'UTF-8');
@@ -202,8 +202,8 @@
   $mail = new PHPMailer(true);
 
   function sendToGoogleSheets($data) {
-     // ここにGASのデプロイをしたURLを貼り付ける
-    $url = "https://script.google.com/macros/s/AKfycbyI-KrlqqCY7vT7Kje2SFbh6D4d-8BvL8mH73mcuJCg1uQL25Fkj2Zoi5lcVpN_XVo4/exec";
+     // ここにGASのURLを貼り付ける
+    $url = "https://script.google.com/macros/s/AKfycbxsM-7w4KZHH0NESmMQ1s_3IgbbE5lkENx_w6_Ml6yOu3nrcl8ixivCwxsApZSXAbhY/exec";
     $options = [
         'http' => [
             'header'  => "Content-Type: application/json",
