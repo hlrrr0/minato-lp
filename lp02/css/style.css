@@ -425,7 +425,7 @@ body a:hover {
     display: inline-block;
 }
 .visual__heading {
-    padding: 0.6rem 0 1rem;
+    padding: 0.6rem 0 3rem;
     line-height: 1.4;
     font-size: 1.78rem;
     font-weight: 700;
@@ -536,7 +536,7 @@ body a:hover {
         font-size: 1.33rem;
     }
     .visual__heading {
-        padding: 0.6rem 0 6rem;
+        padding: 0.6rem 0 3rem;
         font-size: 1.5rem;
     }
     .visual__heading-item {
@@ -1904,4 +1904,11 @@ body a:hover {
     0% { transform: scale(1); }
     50% { transform: scale(1.1); }
     100% { transform: scale(1); }
+}
+
+.pc_only {display: block;}
+.sp_only {display: none;}
+@media screen and (max-width: 768px) {
+    .pc_only {display: none;}
+    .sp_only {display: block;}
 }
